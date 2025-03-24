@@ -147,6 +147,7 @@ chmod 755 -R hyperledger-kafka-FhirHl7/*
 cd hyperledger-kafka-FhirHl7
 ```
 _**This option up all pipeline with couchdb except the explorer, you have two options**_
+
 _**with couchdb**_
 ```bash
 sudo -u user ./scripts/00-start.sh all couchdb
@@ -161,6 +162,7 @@ sudo -u user ./scripts/00-start.sh explorer
 ```
 ### The next options are partial
 _**This option up the net without the chaincode**_
+
 _**with Couchdb**_
 ```bash
 sudo -u user ./scripts/00-start.sh net couchdb
@@ -175,6 +177,7 @@ _**Install chaincode into peers**_
 sudo -u user ./scripts/00-start.sh chaincode
 ```
 **Run the clients**
+
 _**with Docker**_
 ```bash
 sudo -u user ./scripts/00-start.sh client
@@ -184,6 +187,7 @@ _**with Maven**_
 sudo -u user ./scripts/00-start.sh client-maven
 ```
 **Launch the network and install chaincode**
+
 _**with Couchdb**_
 ```bash
 sudo -u user ./scripts/00-start.sh net-chaincode couchdb
@@ -193,6 +197,7 @@ _**with Lebeldb**_
 sudo -u user ./scripts/00-start.sh net-chaincode lebeldb
 ```
 **Install chaincode and run the clients**
+
 _**with Docker**_
 ```bash
 sudo -u user ./scripts/00-start.sh chaincode-client
