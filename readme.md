@@ -6,7 +6,7 @@ The project showcases various integration possibilities offered by these technol
 
 The goal is to demonstrate secure and decentralized operations within a private Blockchain network, highlighting the advantages of Blockchain in terms of data security and auditability compared to conventional databases.
 
-The core component is the Hyperledger private network, used for storing and persisting data. Two clients connect to this network, _each configured for a distinct organization_. The connection is established using the Hyperledger SDK's Gateway library, which simplifies client-blockchain interactions. Direct interaction with the network is also possible.
+The core component is the Hyperledger private network, used for storing and persisting data. Two clients connect to this network, **each configured for a distinct organization**. The connection is established using the Hyperledger SDK's Gateway library, which simplifies client-blockchain interactions. Direct interaction with the network is also possible.
 
 Communication between the laboratory's API (Producer) and the Hyperledger network is facilitated through a Kafka broker. For simplification, the system registers basic patient information in **HL7 FHIR** format, rather than complete laboratory analyses.
 
