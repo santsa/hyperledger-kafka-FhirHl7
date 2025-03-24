@@ -147,7 +147,6 @@ chmod 755 -R hyperledger-kafka-FhirHl7/*
 cd hyperledger-kafka-FhirHl7
 ```
 _**This option up all pipeline with couchdb except the explorer, you have two options**_
-
 _**with couchdb**_
 ```bash
 sudo -u user ./scripts/00-start.sh all couchdb
@@ -161,56 +160,54 @@ _**This option launch Hyperledger Explorer (optional)**_
 sudo -u user ./scripts/00-start.sh explorer
 ```
 ### The next options are partial
-
 _**This option up the net without the chaincode**_
-
-_**with couchdb**_
+_**with Couchdb**_
 ```bash
 sudo -u user ./scripts/00-start.sh net couchdb
 ```
-_**with lebeldb**_
+_**with Lebeldb**_
 ```bash
 sudo -u user ./scripts/00-start.sh net lebeldb
 ```
 _**Important, It must be start the net before**_
-_**This option install chaincode into peers**_
+_**Install chaincode into peers**_
 ```bash
 sudo -u user ./scripts/00-start.sh chaincode
 ```
-**This option run the clients**
-_**start client with docker**_
+**Run the clients**
+_**with Docker**_
 ```bash
 sudo -u user ./scripts/00-start.sh client
 ```
-_**Start client with maven**_
+_**with Maven**_
 ```bash
 sudo -u user ./scripts/00-start.sh client-maven
 ```
-**This option up the net and install chaincode**
-
-_**with couchdb**_
+**Launch the network and install chaincode**
+_**with Couchdb**_
 ```bash
 sudo -u user ./scripts/00-start.sh net-chaincode couchdb
 ```
-_**with lebeldb**_
+_**with Lebeldb**_
 ```bash
 sudo -u user ./scripts/00-start.sh net-chaincode lebeldb
 ```
-**This install chaincode and run the clients**_**start client with docker**_
+**Install chaincode and run the clients**
+_**with Docker**_
 ```bash
 sudo -u user ./scripts/00-start.sh chaincode-client
 ```
-_**Start client with maven**_
+_**with Maven**_
 ```bash
 sudo -u user ./scripts/00-start.sh chaincode-client-maven
 ```
-### For debug option
+### Debug option
 
-_**with couchdb**_
+_**with Couchdb**_
 ```bash
 sudo -u user ./scripts/00-start.sh net-chaincode-kafka couchdb
 ```
-_**with lebeldb**_
+_**with Lebeldb**_
 ```bash
 sudo -u user ./scripts/00-start.sh net-chaincode-kafka lebeldb
 ```
@@ -218,10 +215,10 @@ _new start providers with dev profile, consumer with devOrg1 and cache with devO
 
 **_IMPORTANT for correct launch the consumer and cache must run with different organizations._**
 
-### Calls
-Install postman optional [download](https://www.postman.com/downloads/)
+### API Calls
+Install postman (optional) [download](https://www.postman.com/downloads/)
 
-**Inside folder postman there are the collections for every Api Call**
+**Postman collections**
 * postman/Provider-hl7-fhir.postman_collection.json POST (Producer)
 * postman/Consumer-hl7-fhir.postman_collection.json GET, PUT, POST and DELETE (Consumer)
 * postman/Hapi FHIR.postman_collection.json GET, VREAD historic, PUT, POST and DELETE (Cache)
