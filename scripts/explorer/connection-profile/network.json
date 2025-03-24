@@ -1,0 +1,57 @@
+{
+  "name": "network",
+  "version": "1.0.0",
+  "client": {
+    "tlsEnable": true,
+    "adminCredential": {
+      "id": "exploreradmin",
+      "password": "exploreradminpw"
+    },
+    "enableAuthentication": true,
+    "organization": "Org1MSP",
+    "connection": {
+      "timeout": {
+        "peer": {
+          "endorser": "300"
+        },
+        "orderer": "300"
+      }
+    }
+  },
+  "channels": {
+    "channelhl7fhir": {
+      "peers": {
+        "peer0.org1.hl7-fhir.com": {}
+      },
+      "connection": {
+        "timeout": {
+          "peer": {
+            "endorser": "6000",
+            "eventHub": "6000",
+            "eventReg": "6000"
+          }
+        }
+      }
+    }
+  },
+  "organizations": {
+    "Org1MSP": {
+      "mspid": "Org1MSP",
+      "adminPrivateKey": {
+        "path": "/tmp/crypto/peerOrganizations/org1.hl7-fhir.com/users/User1@org1.hl7-fhir.com/msp/keystore/priv_sk"
+      },
+      "peers": ["peer0.org1.hl7-fhir.com"],
+      "signedCert": {
+        "path": "/tmp/crypto/peerOrganizations/org1.hl7-fhir.com/users/User1@org1.hl7-fhir.com/msp/signcerts/User1@org1.hl7-fhir.com-cert.pem"
+      }
+    }
+  },
+  "peers": {
+    "peer0.org1.hl7-fhir.com": {
+      "tlsCACerts": {
+        "path": "/tmp/crypto/peerOrganizations/org1.hl7-fhir.com/peers/peer0.org1.hl7-fhir.com/tls/ca.crt"
+      },
+      "url": "grpcs://peer0.org1.hl7-fhir.com:7051"
+    }
+  }
+}

@@ -1,0 +1,130 @@
+{
+	"info": {
+		"_postman_id": "72cc05d0-9142-4a8c-8669-527d8918f129",
+		"name": "Consumer",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "1167244"
+	},
+	"item": [
+		{
+			"name": "Fabric getAll",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/fhir+json"
+					}
+				],
+				"url": "http://localhost:8081/FHIRHl7KafkaConsumer/baseR4/fhir/Patient/getAll",
+				"description": "Generated from cURL: curl --location --request GET 'http://hapi.fhir.org/baseR4/metadata' --header 'Accept: application/fhir+json'"
+			},
+			"response": []
+		},
+		{
+			"name": "Fabric-searchById",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": "http://localhost:8081/FHIRHl7KafkaConsumer/baseR4/fhir/Patient/d922903f-9913-452f-894d-fb4e5c6eaebc"
+			},
+			"response": []
+		},
+		{
+			"name": "Fabric createPatient",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/fhir+json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"resourceType\": \"Patient\",\r\n    \"name\": [\r\n        {\r\n            \"use\": \"official\",\r\n            \"family\": \"Smith-2\",\r\n            \"given\": [\r\n                \"John\"\r\n            ]\r\n        }\r\n    ],\r\n    \"gender\": \"male\",\r\n    \"birthDate\": \"1985-05-23\",\r\n    \"address\": [\r\n        {\r\n            \"line\": [\r\n                \"123 Main Street\"\r\n            ],\r\n            \"city\": \"Metropolis\",\r\n            \"state\": \"NY\",\r\n            \"postalCode\": \"10101\",\r\n            \"country\": \"USA\"\r\n        }\r\n    ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:8081/FHIRHl7KafkaConsumer/baseR4/fhir/Patient/create"
+			},
+			"response": []
+		},
+		{
+			"name": "Fabric Update",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/fhir+json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"resourceType\": \"Patient\",\r\n  \"name\": [\r\n    {\r\n      \"use\": \"official\",\r\n      \"family\": \"Smith\",\r\n      \"given\": [\"John\"]\r\n    }\r\n  ],\r\n  \"id\": \"1ad953a4-e58e-42ff-9d71-89fc109f9262\",\r\n  \"gender\": \"male\",\r\n  \"birthDate\": \"1985-05-23\",\r\n  \"address\": [\r\n    {\r\n      \"line\": [\"123 Main Street\"],\r\n      \"city\": \"Metropolis\",\r\n      \"state\": \"NY\",\r\n      \"postalCode\": \"10101\",\r\n      \"country\": \"USA\"\r\n    }\r\n  ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:8081/FHIRHl7KafkaConsumer/baseR4/fhir/Patient/update"
+			},
+			"response": []
+		},
+		{
+			"name": "Fabric Update Async",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/fhir+json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"resourceType\": \"Patient\",\r\n  \"name\": [\r\n    {\r\n      \"use\": \"official\",\r\n      \"family\": \"Smith\",\r\n      \"given\": [\"John\"]\r\n    }\r\n  ],\r\n  \"id\": \"1ad953a4-e58e-42ff-9d71-89fc109f9262\",\r\n  \"gender\": \"male\",\r\n  \"birthDate\": \"1985-05-23\",\r\n  \"address\": [\r\n    {\r\n      \"line\": [\"123 Main Street\"],\r\n      \"city\": \"Metropolis\",\r\n      \"state\": \"NY\",\r\n      \"postalCode\": \"10101\",\r\n      \"country\": \"USA\"\r\n    }\r\n  ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:8081/FHIRHl7KafkaConsumer/baseR4/fhir/Patient/updatePatientAsync"
+			},
+			"response": []
+		},
+		{
+			"name": "Fabric Delete",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": "http://localhost:8081/FHIRHl7KafkaConsumer/baseR4/fhir/Patient/1ad953a4-e58e-42ff-9d71-89fc109f9262"
+			},
+			"response": []
+		}
+	]
+}

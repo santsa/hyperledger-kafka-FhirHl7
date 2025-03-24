@@ -1,0 +1,28 @@
+{
+  "name": "fabric-network",
+  "version": "1.0.0",
+  "client": {
+    "organization": "Org1",
+    "connection": {
+      "timeout": {
+        "peer": {
+          "endorser": "300"
+        }
+      }
+    }
+  },
+  "organizations": {
+    "Org1": {
+      "mspid": "Org1MSP",
+      "peers": ["peer0.org1.hl7-fhir.com"]
+    }
+  },
+  "peers": {
+    "peer0.org1.hl7-fhir.com": {
+      "url": "grpcs://localhost:7051",
+      "tlsCACerts": {
+        "path": "../organizations/peerOrganizations/org1.hl7-fhir.com/tlsca/tlsca.org1.hl7-fhir.com-cert.pem"
+      }
+    }
+  }
+}

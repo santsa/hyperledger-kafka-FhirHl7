@@ -1,0 +1,28 @@
+{
+  "name": "network",
+  "version": "1.0.0",
+  "client": {
+    "organization": "Org2",
+    "connection": {
+      "timeout": {
+        "peer": {
+          "endorser": "300"
+        }
+      }
+    }
+  },
+  "organizations": {
+    "Org2": {
+      "mspid": "Org2MSP",
+      "peers": ["peer0.org2.hl7-fhir.com"]
+    }
+  },
+  "peers": {
+    "peer0.org2.hl7-fhir.com": {
+      "url": "grpcs://localhost:9051",
+      "tlsCACerts": {
+        "path": "../../organizations/peerOrganizations/org2.hl7-fhir.com/tlsca/tlsca.org2.hl7-fhir.com-cert.pem"
+      }
+    }
+  }
+}

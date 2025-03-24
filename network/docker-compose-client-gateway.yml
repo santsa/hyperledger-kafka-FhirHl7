@@ -1,0 +1,118 @@
+networks:
+  fabric_test:
+    external: true 
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - fabric_test
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9090:9090"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      #if run with dev or maven
+      #KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9090
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9090
+      #with external network
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9090
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - fabric_test
+
+  fhir-hl7-provider:
+    build: 
+      context: ../client/FHIRHl7Kafka/
+      dockerfile: FHIRHl7KafkaProvider/Dockerfile
+    container_name: fhir-hl7-provider
+    ports:
+      - "8083:8080"
+    depends_on:
+      - kafka
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - fabric_test
+
+  fhir-hl7-consumer:
+    build: 
+      context: ../client/FHIRHl7Kafka/
+      dockerfile: FHIRHl7KafkaConsumer/Dockerfile
+    container_name: fhir-hl7-consumer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - kafka
+    environment:
+      - SPRING_PROFILES_ACTIVE=dockerOrg1
+      - FABRIC_CRYPTO_PATH=/app/organizations/peerOrganizations
+    volumes:
+      - ./../organizations:/app/organizations
+    networks:
+      - fabric_test
+
+  fhir-hl7-hapi-cache:
+      build:
+        context: ../client/hapi-fhir/
+        dockerfile: Dockerfile
+      container_name: fhir-hl7-hapi-cache
+      #image: hapi-fhir
+      ports:
+        - 8082:8080
+      environment:
+        - SPRING_PROFILES_ACTIVE=dockerOrg2
+        - FABRIC_CONNECTION=/app/organizations/cryptogen/connections-templates/connection-dockerOrg2.json
+        - FABRIC_WALLETPATH=/app/organizations/peerOrganizations/org2.hl7-fhir.com/users
+      volumes:
+          - ./../organizations:/app/organizations
+      networks:
+        - fabric_test
+
+#volumes:
+  #kafka-data:
+  #kafka-ui-data:
+
+    #docker-compose down -v
+    #docker-compose up --build -d
+    #docker-compose start
+    #docker-compose stop
+    #docker-compose down
+
+    #docker exec -it kafka_kraft_hl7_fhir /bin/bash
+    #cd /opt/kafka/bin
+
+    # create topic 'my-first-topic'
+    #sh kafka-topics.sh --bootstrap-server localhost:9092 --create --topic my-first-topic --partitions 1 --replication-factor 1
+
+    # list topics
+    #sh kafka-topics.sh --bootstrap-server localhost:9092 --list
+
+    # send messages to the topic
+    #sh kafka-console-producer.sh --bootstrap-server localhost:9092 --topic my-first-topic
+    #>Hello World
+    #>The weather is fine
+    #>I love Kafka
+
+    ## Connect to the container's bash (find out the name with 'docker ps')
+    #docker exec -it --user=root <name-of-kafka-ui-container> /bin/sh
+    #docker exec -it --user=root kafka_ui_hl7_fhir /bin/sh
+    # Now, we are connected to the container's bash.
+    # Let's install 'socat'
+    # apk add socat
+    # Use socat to create the port forwarding
+    # socat tcp-listen:9092,fork tcp:host.docker.internal:9092
+    # This will lead to a running process that we don't kill as long as the container's running

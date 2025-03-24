@@ -1,0 +1,45 @@
+services:
+  fhir:
+    container_name: fhir
+    image: "hapiproject/hapi:latest"
+    ports:
+      - "8086:8080"
+    configs:
+      - source: hapi
+        target: /app/config/application.yaml
+    depends_on:
+      - db
+
+
+  db:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: admin
+      POSTGRES_DB: hapi
+    volumes:
+      - ./hapi.postgress.data:/var/lib/postgresql/data
+    ports:
+      - 5433:5432
+
+configs:
+  hapi:
+     file: ./hapi.application.yaml
+
+#http://localhost:8086/
+#http://localhost:8086/fhir/metadata
+#http://localhost:8086/fhir/patient
+#http://localhost:8086/fhir/patient/1
+#http://localhost:8086/fhir/patient/1/encounter
+#http://localhost:8086/fhir/patient/1/encounter/1
+#http://localhost:8086/fhir/patient/1/encounter/1/observation
+#http://localhost:8086/fhir/patient/1/encounter/1/observation/1
+
+  #docker-compose config
+  #docker-compose down -v
+  #docker-compose up -d
+  #docker-compose down
+  #docker-compose logs -f
+  #docker-compose logs -f --tail 100
+  #docker-compose logs -f --tail 100 --since 0
+  #docker-compose logs -f --tail 100 --since 0

@@ -1,0 +1,33 @@
+{
+  "name": "network",
+  "version": "1.0.0",
+  "client": {
+    "organization": "Org2",
+    "connection": {
+      "timeout": {
+        "peer": {
+          "endorser": "300"
+        }
+      }
+    }
+  },
+  "organizations": {
+    "Org2": {
+      "mspid": "Org2MSP",
+      "peers": ["peer0.org2.hl7-fhir.com"]
+    }
+  },
+  "peers": {
+    "peer0.org2.hl7-fhir.com": {
+      "url": "grpcs://peer0.org2.hl7-fhir.com:9051",
+      "tlsCACerts": {
+        "path": "/app/organizations/peerOrganizations/org2.hl7-fhir.com/tlsca/tlsca.org2.hl7-fhir.com-cert.pem"
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.org2.hl7-fhir.com",
+        "hostnameOverride": "peer0.org2.hl7-fhir.com",
+        "grpc.NettyChannelBuilderOption.maxInboundMessageSize": 9000000
+      }
+    }
+  }
+}

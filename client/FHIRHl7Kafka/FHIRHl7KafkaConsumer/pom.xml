@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.kafka</groupId>
+        <artifactId>FHIRHl7Kafka</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <groupId>com.kafka.consumer</groupId>
+    <artifactId>FHIRHl7KafkaConsumer</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>FHIRHl7KafkaConsumer</name>
+    <description>Spring Boot For Kafka</description>
+
+    <!-- Dependency Management for BOMs -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- Google Protocol Buffers BOM -->
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-bom</artifactId>
+                <version>4.28.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- gRPC BOM -->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>1.67.1</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>    
+
+    <dependencies>
+       <!-- Hyperledger Fabric Gateway -->
+        <dependency>
+            <groupId>org.hyperledger.fabric</groupId>
+            <artifactId>fabric-gateway</artifactId>
+            <version>1.7.0</version>
+        </dependency>
+
+        <!-- gRPC API (compile only) -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- gRPC Netty (runtime only) -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Google Gson -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+        <profile>
+            <id>devOrg1</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <profileActive>devOrg1</profileActive>
+            </properties>
+        </profile>
+        <profile>
+            <id>devOrg2</id>
+            <properties>
+                <profileActive>devOrg2</profileActive>
+            </properties>
+        </profile>
+        <profile>
+            <id>mvnOrg1</id>
+            <properties>
+                <profileActive>mvnOrg1</profileActive>
+            </properties>
+        </profile>
+        <profile>
+            <id>mvnOrg2</id>
+            <properties>
+                <profileActive>mvnOrg2</profileActive>
+            </properties>
+        </profile>
+        <profile>
+            <id>dockerOrg1</id>
+            <properties>
+                <profileActive>dockerOrg1</profileActive>
+            </properties>
+        </profile>
+        <profile>
+            <id>dockerOrg2</id>
+            <properties>
+                <profileActive>dockerOrg2</profileActive>
+            </properties>
+        </profile>
+    </profiles>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+
+</project>
