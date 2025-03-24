@@ -146,12 +146,13 @@ _**RUN, the script for launch the net, there are a several options for launch, b
 chmod 755 -R hyperledger-kafka-FhirHl7/*
 cd hyperledger-kafka-FhirHl7
 ```
-_**This option up all pipeline with couchdb except the explorer, you have two options with couchdb or lebeldb**_
-_***with couchdb***_
+_**This option up all pipeline with couchdb except the explorer, you have two options**_
+
+_**with couchdb**_
 ```bash
 sudo -u user ./scripts/00-start.sh all couchdb
 ```
-_***with lebeldb***_
+_**with lebeldb**_
 ```bash
 sudo -u user ./scripts/00-start.sh all lebeldb
 ```
@@ -162,11 +163,12 @@ sudo -u user ./scripts/00-start.sh explorer
 ### The next options are partial
 
 _**This option up the net without the chaincode**_
-_***with couchdb***_
+
+_**with couchdb**_
 ```bash
 sudo -u user ./scripts/00-start.sh net couchdb
 ```
-_***with lebeldb***_
+_**with lebeldb**_
 ```bash
 sudo -u user ./scripts/00-start.sh net lebeldb
 ```
@@ -185,11 +187,12 @@ _**Start client with maven**_
 sudo -u user ./scripts/00-start.sh client-maven
 ```
 **This option up the net and install chaincode**
-_***with couchdb***_
+
+_**with couchdb**_
 ```bash
 sudo -u user ./scripts/00-start.sh net-chaincode couchdb
 ```
-_***with lebeldb***_
+_**with lebeldb**_
 ```bash
 sudo -u user ./scripts/00-start.sh net-chaincode lebeldb
 ```
@@ -215,7 +218,7 @@ _new start providers with dev profile, consumer with devOrg1 and cache with devO
 
 **_IMPORTANT for correct launch the consumer and cache must run with different organizations._**
 
-### CALLS
+### Calls
 Install postman optional [download](https://www.postman.com/downloads/)
 
 **Inside folder postman there are the collections for every Api Call**
