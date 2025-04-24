@@ -1,11 +1,15 @@
 #!/bin/bash
-#git clone https://github.com/salva/pipeline-hyperledger-fhir-hl7.git
-#cd pipeline-hyperledger-fhir-hl7
+#git clone https://github.com/salva/hyperledger-kafka-FhirHl7.git
+#cd hyperledger-kafka-FhirHl7
 #sudo -u sgorrita ./scripts/00-start.sh all couchdb
 #sudo -u sgorrita ./scripts/00-start.sh all lebeldb
 
 function launchNet() {
     ./scripts/01-start-net.sh "$1"
+}
+
+function launchAnchorPeer() {
+    ./scripts/00-update-nodes-anchor-peer.sh "$1" "$2" "$3"
 }
 
 function launchChaincode() {
@@ -28,10 +32,20 @@ function launchKafka(){
     ./scripts/03-start-only-kafka.sh
 }
 
+function launchAddOrg() {
+    ./scripts/05-add-org4.sh "$1"
+}
+
+function launchAddOrgChaincode() {
+    ./scripts/06-start-chaincode-hl7-fhir-java-org4.sh
+}
+
 # Check if a parameter was passed
 case "$1" in
     net)
         launchNet $2
+        launchAnchorPeer "org1" "7051" "Org1MSP"
+        launchAnchorPeer "Org2" "9051" "Org2MSP"
         ;;
     chaincode)
         launchChaincode
@@ -50,10 +64,14 @@ case "$1" in
         ;;
     net-chaincode)
         launchNet $2
+        launchAnchorPeer "org1" "7051" "Org1MSP"
+        launchAnchorPeer "Org2" "9051" "Org2MSP"
         launchChaincode
         ;;
     net-chaincode-kafka)
         launchNet $2
+        launchAnchorPeer "org1" "7051" "Org1MSP"
+        launchAnchorPeer "Org2" "9051" "Org2MSP"
         launchChaincode
         launchKafka
         ;;
@@ -69,16 +87,30 @@ case "$1" in
         launchChaincode
         launchClientMaven
         ;;
+    addorg-all)
+        launchAddOrg $2
+        launchAnchorPeer "Org4" "13051" "Org4MSP"
+        launchAddOrgChaincode
+        ;;
+    addorg-net)
+        launchAddOrg $2
+        launchAnchorPeer "Org4" "13051" "Org4MSP"
+        ;;
+    addorg-chaincode)
+        launchAddOrgChaincode
+        ;;
     all)
         echo "*******************************************************"
         echo "*********************Init all.sh***********************"
         echo "*******************************************************"
         launchNet $2
+        launchAnchorPeer "org1" "7051" "Org1MSP"
+        launchAnchorPeer "Org2" "9051" "Org2MSP"
         launchChaincode
         launchClient
         ;;
     *)
-        echo "Invalid option. Use: net (couchdb or lebeldb) | chaincode | client | explorer | net-chaincode (couchdb or lebeldb) | chaincode-client | all (couchdb or lebeldb)"
+        echo "Invalid option. Use: net (couchdb or lebeldb) | chaincode | client | explorer | net-chaincode (couchdb or lebeldb) | chaincode-client | addorg-all (couchdb or lebeldb) | addorg-net (couchdb or lebeldb) | addorg-chaincode | all (couchdb or lebeldb)"
         exit 1
         ;;
 esac

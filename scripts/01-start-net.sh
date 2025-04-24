@@ -11,6 +11,7 @@ rm -rf organizations/peerOrganizations
 rm -rf organizations/ordererOrganizations
 rm -rf channel-artifacts/
 mkdir channel-artifacts
+rm system-genesis-block/genesis.block
 
 export PATH=$PATH_HOME/bin:$PATH_HOME:$PATH
 export FABRIC_CFG_PATH=$PATH_HOME/config
