@@ -8,7 +8,8 @@ export PATH_HOME=${PWD}
 export PATH=$PATH_HOME/bin:$PATH_HOME:$PATH
 export FABRIC_CFG_PATH=$PATH_HOME/config
 export VERSION="1.0"
-export SEQUENCE="1"
+export SEQUENCE="2"
+export CORE_PEER_TLS_ENABLED=true
 
 
 echo "*******************************************************"
@@ -18,8 +19,8 @@ echo "*******************************************************"
 export CORE_PEER_LOCALMSPID="Org4MSP"
 export CORE_PEER_TLS_ROOTCERT_FILE=$PATH_HOME/organizations/peerOrganizations/org4.hl7-fhir.com/peers/peer0.org4.hl7-fhir.com/tls/ca.crt
 export CORE_PEER_MSPCONFIGPATH=$PATH_HOME/organizations/peerOrganizations/org4.hl7-fhir.com/users/Admin@org4.hl7-fhir.com/msp
-export CORE_PEER_ADDRESS=172.18.0.14:13051
-peer lifecycle chaincode install hl7-fhir-java.tar.gz --peerAddresses $CORE_PEER_ADDRESS --tlsRootCertFiles $CORE_PEER_TLS_ROOTCERT_FILE
+export CORE_PEER_ADDRESS=localhost:13051
+peer lifecycle chaincode install hl7-fhir-java.tar.gz
 
 echo "*******************************************************"
 echo "***************queryinstalled chaincode****************"
@@ -33,6 +34,10 @@ echo "*******************************************************"
 echo "***********approveformyorg chaincode peer 1************"
 echo "*******************************************************"
 sleep 10
+export CORE_PEER_LOCALMSPID="Org1MSP"
+export CORE_PEER_MSPCONFIGPATH=$PATH_HOME/organizations/peerOrganizations/org1.hl7-fhir.com/users/Admin@org1.hl7-fhir.com/msp
+export CORE_PEER_TLS_ROOTCERT_FILE=$PATH_HOME/organizations/peerOrganizations/org1.hl7-fhir.com/peers/peer0.org1.hl7-fhir.com/tls/ca.crt
+export CORE_PEER_ADDRESS=localhost:7051
 peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.hl7-fhir.com --channelID channelhl7fhir --signature-policy "OR('Org1MSP.member','Org2MSP.member','Org4MSP.member')" --name hl7-fhir-java --version $VERSION --package-id $CC_PACKAGE_ID --sequence $SEQUENCE --tls --cafile $PATH_HOME/organizations/ordererOrganizations/hl7-fhir.com/orderers/orderer.hl7-fhir.com/msp/tlscacerts/tlsca.hl7-fhir.com-cert.pem
 
 echo "*******************************************************"
@@ -58,6 +63,8 @@ peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameO
 echo "*******************************************************"
 echo "(checkcommitreadiness - might need adjustment to check for Org4)"
 echo "*******************************************************"
+sleep 10
+peer lifecycle chaincode checkcommitreadiness --channelID channelhl7fhir --name hl7-fhir-java --version $VERSION --sequence $SEQUENCE --tls --cafile $PATH_HOME/organizations/ordererOrganizations/hl7-fhir.com/orderers/orderer.hl7-fhir.com/msp/tlscacerts/tlsca.hl7-fhir.com-cert.pem --output json
 
 echo "*******************************************************"
 echo "***************commit chaincode***********************"

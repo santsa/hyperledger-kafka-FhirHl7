@@ -17,3 +17,4 @@ client/FHIRHl7Kafka/FHIRHl7KafkaConsumer/Snap.*.trc
 client/javacore.*.txt
 client/*/Snap.*.trc
 client/jitdump.*.dmp
+*/hapi.postgress.data*

@@ -1,5 +1,7 @@
 #!/bin/bash
+#sudo -u sgorrita ./scripts/00-start.sh addorg-net couchdb
 #sudo -u sgorrita ./scripts/00-start.sh addorg-net lebeldb
+
 echo "*******************************************************"
 echo "******************Init 05-add-org4*********************"
 echo "*******************************************************"
