@@ -68,21 +68,26 @@ public final class AssetTransfer implements ContractInterface {
      */
     @SuppressWarnings("unchecked")
     @Transaction(intent = Transaction.TYPE.SUBMIT)
-    public Asset CreateAsset(final Context ctx, final String value) {
+    public Asset CreateAsset(final Context ctx, final String value, final String privateCollection) {
         ChaincodeStub stub = ctx.getStub();
         Map<String, Object> valueMap = genson.deserialize(value, Map.class);
-        if (AssetExists(ctx, valueMap.get("id").toString())) {
+        if (AssetExists(ctx, valueMap.get("id").toString()), privateCollection) {
             String errorMessage = String.format("Asset %s already exists", valueMap.get("id").toString());
             System.err.println(errorMessage);
             throw new ChaincodeException(errorMessage, AssetTransferErrors.ASSET_ALREADY_EXISTS.toString());
         }
         Asset asset = new Asset(valueMap.get("id").toString(), valueMap);
-        /*((Map<String, Object>) asset.getValue().get("meta")).put("versionId", "1");
-        asset.getValue().put("active", true);*/
-        stub.putStringState(asset.getId(), genson.serialize(asset));
-        stub.setEvent("CreateAsset - " + ctx.getClientIdentity().getMSPID(), genson.serialize(asset).getBytes());
+
+        StringBuilder msg = new StringBuilder().append("CreateAsset - ");
+        if (privateCollection != null && !privateCollection.isEmpty()) {
+            stub.putPrivateData(privateCollection,asset.getId(), genson.serialize(asset));
+            msg.append(privateCollection).append(" - ");
+        } else {
+            stub.putStringState(asset.getId(), genson.serialize(asset));
+        }
+        stub.setEvent(msg.append(ctx.getClientIdentity().getMSPID()).toString(), genson.serialize(asset).getBytes());
         return asset;
-    }
+    }    
 
    /**
      * Updates the properties of an asset on the ledger.
@@ -97,10 +102,10 @@ public final class AssetTransfer implements ContractInterface {
      */
     @SuppressWarnings("unchecked")
     @Transaction(intent = Transaction.TYPE.SUBMIT)
-    public Asset UpdateAsset(final Context ctx, final String value) {
+    public Asset UpdateAsset(final Context ctx, final String value, final String privateCollection) {
         ChaincodeStub stub = ctx.getStub();
         Map<String, Object> valueMap = genson.deserialize(value, Map.class);
-        if (!AssetExists(ctx, valueMap.get("id").toString())) {
+        if (!AssetExists(ctx, valueMap.get("id").toString(), privateCollection)) {
             String errorMessage = String.format("Asset %s does not exist", valueMap.get("id").toString());
             System.err.println(errorMessage);
             throw new ChaincodeException(errorMessage, AssetTransferErrors.ASSET_NOT_FOUND.toString());
@@ -110,9 +115,16 @@ public final class AssetTransfer implements ContractInterface {
 
         int versionId = Integer.parseInt(((Map<String, Object>) currentAsset.getValue().get("meta")).get("versionId").toString()) + 1;
         ((Map<String, Object>) asset.getValue().get("meta")).put("versionId", versionId + "");
-
-        stub.putStringState(asset.getId(), genson.serialize(asset));
-        stub.setEvent("UpdateAsset - " + ctx.getClientIdentity().getMSPID(), genson.serialize(asset).getBytes());
+        String assetJSON = genson.serialize(asset);
+        
+        StringBuilder msg = new StringBuilder().append("UpdateAsset - ");
+        if (privateCollection != null && !privateCollection.isEmpty()) {
+            stub.putPrivateData(privateCollection, assetId, assetJSON);
+            msg.append(privateCollection).append(" - ");
+        } else {
+            stub.putStringState(assetId, assetJSON);
+        }
+        stub.setEvent(msg.append(ctx.getClientIdentity().getMSPID()).toString(), genson.serialize(asset).getBytes());
         return asset;
     }
 
@@ -128,9 +140,15 @@ public final class AssetTransfer implements ContractInterface {
         return getAsset(ctx, assetID);
     }
 
-    private Asset getAsset(final Context ctx, final String assetID) {
+    private Asset getAsset(final Context ctx, final String assetID, final String privateCollection) {
         ChaincodeStub stub = ctx.getStub();
-        String assetJSON = stub.getStringState(assetID);
+        String assetJSON;
+        if (privateCollection != null && !privateCollection.isEmpty()) {
+            assetJSON = stub.getPrivateData(privateCollection, assetId);
+        } else {
+            assetJSON = stub.getStringState(assetId);
+        }
+
         if (assetJSON == null || assetJSON.isEmpty()) {
             String errorMessage = String.format("Asset %s does not exist", assetID);
             System.err.println(errorMessage);
@@ -140,8 +158,14 @@ public final class AssetTransfer implements ContractInterface {
     }
 
     @Transaction(intent = Transaction.TYPE.EVALUATE)
-    public String GetAssetHistory(final Context ctx, final String assetID) {
-        QueryResultsIterator<KeyModification> historyIterator = ctx.getStub().getHistoryForKey(assetID);
+    public String GetAssetHistory(final Context ctx, final String assetID, final String privateCollection) {
+        QueryResultsIterator<KeyModification> historyIterator;
+        if (privateCollection != null && !privateCollection.isEmpty()) {
+            historyIterator = stub.getPrivateDataHistory(privateCollection, assetID);
+        } else {
+            historyIterator = stub.getHistoryForKey(assetId);
+        }
+
         List<Asset> assetHistoryList = new ArrayList<>();
         for (KeyModification modification : historyIterator) {
             String assetJSON = modification.getStringValue();
@@ -165,18 +189,26 @@ public final class AssetTransfer implements ContractInterface {
      * @param assetID the ID of the asset being deleted
      */
     @Transaction(intent = Transaction.TYPE.SUBMIT)
-    public Asset DeleteAsset(final Context ctx, final String assetID) {
+    public Asset DeleteAsset(final Context ctx, final String assetID, final String privateCollection) {
         ChaincodeStub stub = ctx.getStub();
-        if (!AssetExists(ctx, assetID)) {
+        if (!AssetExists(ctx, assetID, privateCollection)) {
             String errorMessage = String.format("Asset %s does not exist", assetID);
             System.err.println(errorMessage);
             throw new ChaincodeException(errorMessage, AssetTransferErrors.ASSET_NOT_FOUND.toString());
         }
-        Asset currentAsset = getAsset(ctx, assetID);
+        Asset currentAsset = getAsset(ctx, assetID, privateCollection);
         currentAsset.getValue().put("active", false);
-        stub.putStringState(currentAsset.getId(), genson.serialize(currentAsset));
-        stub.setEvent("DeleteAsset - " + ctx.getClientIdentity().getMSPID(), genson.serialize(currentAsset).getBytes());
-        stub.delState(assetID);
+        StringBuilder msg = new StringBuilder().append("DeleteAsset - ");
+        String assetJSON = genson.serialize(currentAsset);
+        if (privateCollection != null && !privateCollection.isEmpty()) {
+            stub.putPrivateData(privateCollection, assetId, assetJSON);
+            stub.deletePrivateData(privateCollection, assetId);
+            msg.append(privateCollection).append(" - ");
+        } else {
+            stub.putStringState(assetId, assetJSON);
+            stub.delState(assetId);
+        }
+        stub.setEvent(msg.append(ctx.getClientIdentity().getMSPID()).toString(), genson.serialize(asset).getBytes());
         return currentAsset;
     }
 
@@ -188,9 +220,14 @@ public final class AssetTransfer implements ContractInterface {
      * @return boolean indicating the existence of the asset
      */
     @Transaction(intent = Transaction.TYPE.EVALUATE)
-    public boolean AssetExists(final Context ctx, final String assetID) {
+    public boolean AssetExists(final Context ctx, final String assetID, final String privateCollection) {
         ChaincodeStub stub = ctx.getStub();
-        String assetJSON = stub.getStringState(assetID);
+        String assetJSON;
+        if (privateCollection != null && !privateCollection.isEmpty()) {
+            assetJSON = stub.getPrivateData(privateCollection, assetId);
+        } else {
+            assetJSON = stub.getStringState(assetId);
+        }
         return (assetJSON != null && !assetJSON.isEmpty());
     }
 

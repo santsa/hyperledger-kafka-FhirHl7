@@ -31,8 +31,9 @@ echo "*******************************************************"
 echo "*******************package chaincode*******************"
 echo "*******************************************************"
 rm hl7-fhir-java.tar.gz
-export VERSION="1.0"
-export SEQUENCE="1"
+export VERSION=$1
+export SEQUENCE=$2
+export PRIVATE_COLLECTION=$3
 peer version
 peer lifecycle chaincode package hl7-fhir-java.tar.gz --path chaincodes/chaincode-hl7-fhir/build/libs/ --lang java --label hl7-fhir-java_$VERSION
 
@@ -69,7 +70,13 @@ echo "*******************************************************"
 echo "***********approveformyorg chaincode peer 1************"
 echo "*******************************************************"
 sleep 10
-peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.hl7-fhir.com --channelID channelhl7fhir --signature-policy "OR('Org1MSP.member','Org2MSP.member')" --name hl7-fhir-java --version $VERSION --package-id $CC_PACKAGE_ID --sequence $SEQUENCE --tls --cafile $PATH_HOME/organizations/ordererOrganizations/hl7-fhir.com/orderers/orderer.hl7-fhir.com/msp/tlscacerts/tlsca.hl7-fhir.com-cert.pem
+
+EXTRA_COLLECTION_FLAG=""
+if [ -n "$PRIVATE_COLLECTION" ]; then
+  EXTRA_COLLECTION_FLAG="--collections-config \"$PATH_HOME/organizations/private_data/$PRIVATE_COLLECTION\""
+fi
+
+peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.hl7-fhir.com --channelID channelhl7fhir --signature-policy "OR('Org1MSP.member','Org2MSP.member')" --name hl7-fhir-java --version $VERSION --package-id $CC_PACKAGE_ID --sequence $SEQUENCE --tls --cafile $PATH_HOME/organizations/ordererOrganizations/hl7-fhir.com/orderers/orderer.hl7-fhir.com/msp/tlscacerts/tlsca.hl7-fhir.com-cert.pem $EXTRA_COLLECTION_FLAG
 
 echo "*******************************************************"
 echo "***********approveformyorg chaincode peer 1************"
@@ -79,19 +86,19 @@ export CORE_PEER_LOCALMSPID="Org1MSP"
 export CORE_PEER_MSPCONFIGPATH=$PATH_HOME/organizations/peerOrganizations/org1.hl7-fhir.com/users/Admin@org1.hl7-fhir.com/msp
 export CORE_PEER_TLS_ROOTCERT_FILE=$PATH_HOME/organizations/peerOrganizations/org1.hl7-fhir.com/peers/peer0.org1.hl7-fhir.com/tls/ca.crt
 export CORE_PEER_ADDRESS=localhost:7051
-peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.hl7-fhir.com --channelID channelhl7fhir --signature-policy "OR('Org1MSP.member','Org2MSP.member')" --name hl7-fhir-java --version $VERSION --package-id $CC_PACKAGE_ID --sequence $SEQUENCE --tls --cafile $PATH_HOME/organizations/ordererOrganizations/hl7-fhir.com/orderers/orderer.hl7-fhir.com/msp/tlscacerts/tlsca.hl7-fhir.com-cert.pem
+peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.hl7-fhir.com --channelID channelhl7fhir --signature-policy "OR('Org1MSP.member','Org2MSP.member')" --name hl7-fhir-java --version $VERSION --package-id $CC_PACKAGE_ID --sequence $SEQUENCE --tls --cafile $PATH_HOME/organizations/ordererOrganizations/hl7-fhir.com/orderers/orderer.hl7-fhir.com/msp/tlscacerts/tlsca.hl7-fhir.com-cert.pem $EXTRA_COLLECTION_FLAG
 
 echo "*******************************************************"
 echo "************checkcommitreadiness chaincode*************"
 echo "*******************************************************"
 sleep 10
-peer lifecycle chaincode checkcommitreadiness --channelID channelhl7fhir --name hl7-fhir-java --version $VERSION --sequence $SEQUENCE --tls --cafile $PATH_HOME/organizations/ordererOrganizations/hl7-fhir.com/orderers/orderer.hl7-fhir.com/msp/tlscacerts/tlsca.hl7-fhir.com-cert.pem --output json
+peer lifecycle chaincode checkcommitreadiness --channelID channelhl7fhir --name hl7-fhir-java --version $VERSION --sequence $SEQUENCE --tls --cafile $PATH_HOME/organizations/ordererOrganizations/hl7-fhir.com/orderers/orderer.hl7-fhir.com/msp/tlscacerts/tlsca.hl7-fhir.com-cert.pem $EXTRA_COLLECTION_FLAG --output json
 
 echo "*******************************************************"
 echo "***************commit chaincode***********************"
 echo "*******************************************************"
 sleep 10
-peer lifecycle chaincode commit -o localhost:7050 --ordererTLSHostnameOverride orderer.hl7-fhir.com --signature-policy "OR('Org1MSP.member','Org2MSP.member')" --channelID channelhl7fhir --name hl7-fhir-java --version $VERSION --sequence $SEQUENCE --tls --cafile $PATH_HOME/organizations/ordererOrganizations/hl7-fhir.com/orderers/orderer.hl7-fhir.com/msp/tlscacerts/tlsca.hl7-fhir.com-cert.pem --peerAddresses localhost:7051 --tlsRootCertFiles $PATH_HOME/organizations/peerOrganizations/org1.hl7-fhir.com/peers/peer0.org1.hl7-fhir.com/tls/ca.crt --peerAddresses localhost:9051 --tlsRootCertFiles $PATH_HOME/organizations/peerOrganizations/org2.hl7-fhir.com/peers/peer0.org2.hl7-fhir.com/tls/ca.crt
+peer lifecycle chaincode commit -o localhost:7050 --ordererTLSHostnameOverride orderer.hl7-fhir.com --signature-policy "OR('Org1MSP.member','Org2MSP.member')" --channelID channelhl7fhir --name hl7-fhir-java --version $VERSION --sequence $SEQUENCE --tls --cafile $PATH_HOME/organizations/ordererOrganizations/hl7-fhir.com/orderers/orderer.hl7-fhir.com/msp/tlscacerts/tlsca.hl7-fhir.com-cert.pem --peerAddresses localhost:7051 --tlsRootCertFiles $PATH_HOME/organizations/peerOrganizations/org1.hl7-fhir.com/peers/peer0.org1.hl7-fhir.com/tls/ca.crt --peerAddresses localhost:9051 --tlsRootCertFiles $PATH_HOME/organizations/peerOrganizations/org2.hl7-fhir.com/peers/peer0.org2.hl7-fhir.com/tls/ca.crt $EXTRA_COLLECTION_FLAG
 
 echo "*******************************************************"
 echo "***************querycommitted chaincode***************"
