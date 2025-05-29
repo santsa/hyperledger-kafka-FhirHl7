@@ -6,6 +6,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.cert.CertificateException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.hyperledger.fabric.client.Contract;
@@ -33,7 +36,7 @@ public abstract class FabricServiceBase {
 
     // Inject configuration values from application.properties
     @Value("${fabric.mspId}")
-    private String mspId;
+    protected String mspId;
 
     @Value("${fabric.channelName}")
     private String channelName;
@@ -55,6 +58,14 @@ public abstract class FabricServiceBase {
 
     @Value("${fabric.user}")
     private String user;
+
+    @Value("${fabric.private.authorizedMspIds:}") // Default to empty string
+    private String authorizedMspIdsRaw;
+
+    @Value("${fabric.private.collectionName:}") // Default to empty string
+    private String privateCollectionName;
+
+    private List<String> authorizedMspIds;
 
     protected Gateway gateway;
     protected ManagedChannel channel;
@@ -81,6 +92,15 @@ public abstract class FabricServiceBase {
         this.gateway = builder.connect();
         var network = gateway.getNetwork(getChannelName());
         this.contract = network.getContract(getChaincodeName());
+
+        // Process raw MSP IDs
+        if (authorizedMspIdsRaw != null && !authorizedMspIdsRaw.isEmpty()) {
+            this.authorizedMspIds = Arrays.asList(authorizedMspIdsRaw.split("\\s*,\\s*")); // Split by comma, trimming whitespace
+        } else {
+            this.authorizedMspIds = new ArrayList<>(); // Empty list if property is not set
+        }
+        log.info("Authorized MSP IDs for private collection: {}", this.authorizedMspIds);
+        log.info("Target private collection name: {}", this.privateCollectionName);
         log.info("\n--> End Created contract");
     }
 
@@ -125,4 +145,11 @@ public abstract class FabricServiceBase {
         }
     }
 
+    public List<String> getAuthorizedMspIds() {
+        return this.authorizedMspIds;
+    }
+
+    public String getPrivateCollectionName() {
+        return this.privateCollectionName;
+    }
 }

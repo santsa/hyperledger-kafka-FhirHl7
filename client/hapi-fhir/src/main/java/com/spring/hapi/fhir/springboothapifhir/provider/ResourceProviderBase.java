@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,6 +62,11 @@ public abstract class ResourceProviderBase {
 
     @Value("${fabric.mspId}")
     private String mspId;
+
+    @Value("${fabric.private.memberMspIds:}") // Default to empty string
+    private String privateMemberMspIdsRaw;
+
+    private List<String> privateMemberMspIds;
 
     protected Gateway gateway;
     protected Network network;
@@ -124,6 +130,13 @@ public abstract class ResourceProviderBase {
         network = gateway.getNetwork(channelName);
         contract = network.getContract(chaincodeName);
 
+        if (privateMemberMspIdsRaw != null && !privateMemberMspIdsRaw.isEmpty()) {
+            this.privateMemberMspIds = Arrays.asList(privateMemberMspIdsRaw.split("\\s*,\\s*"));
+        } else {
+            this.privateMemberMspIds = new ArrayList<>();
+        }
+        log.info("Configured private member MSP IDs: {}", this.privateMemberMspIds);
+
         contract.addContractListener(contractEvent -> {
             try {
                 contractListener(contractEvent);
@@ -139,16 +152,70 @@ public abstract class ResourceProviderBase {
     }
 
     private void contractListener(ContractEvent contractEvent) throws JsonProcessingException, ContractException {
-        log.info("\n-->Gateway event launch " + contractEvent.getName() + "!");
-        if (!contractEvent.getName().endsWith(mspId)) {
-            Resource resource = decode(prettyJson(contractEvent.getPayload().get())).get();
-            if (contractEvent.getName().startsWith("CreateAsset")) {
-                addCache(resource);
-            } else if (contractEvent.getName().startsWith("UpdateAsset")) {
-                updateCache(resource);
-            } else if (contractEvent.getName().startsWith("DeleteAsset")) {
-                deleteCache(resource);
+        log.info("\n--> Gateway event received. Name: {}, Payload: {}", contractEvent.getName(), new String(contractEvent.getPayload().orElse(new byte[0]), StandardCharsets.UTF_8));
+
+        // Assuming event name is structured like "ChaincodeEventName_OriginatorMSPID"
+        // E.g., "CreateAsset_Org1MSP" or "UpdateAsset_Org2MSP"
+        String eventNameFull = contractEvent.getName();
+        String originatorMSPID = null;
+        int lastUnderscore = eventNameFull.lastIndexOf('_');
+
+        if (lastUnderscore > 0 && lastUnderscore < eventNameFull.length() - 1) {
+            originatorMSPID = eventNameFull.substring(lastUnderscore + 1);
+        }
+
+        if (originatorMSPID == null) {
+            log.warn("Could not parse originator MSPID from event name: {}. Skipping detailed processing.", eventNameFull);
+            return;
+        }
+
+        // If the event is from this client instance, ignore it for this processing logic
+        // (as it would have already updated its cache or knows about its own transactions)
+        if (originatorMSPID.equals(this.mspId)) {
+            log.info("Event originated from this MSP ({}). Skipping further event processing here.", this.mspId);
+            return;
+        }
+
+        Optional<byte[]> payloadOptional = contractEvent.getPayload();
+        if (payloadOptional.isEmpty() || payloadOptional.get().length == 0) {
+            log.warn("Event {} from {} has no payload. Skipping.", eventNameFull, originatorMSPID);
+            return;
+        }
+        byte[] payload = payloadOptional.get();
+
+        if (this.privateMemberMspIds.contains(originatorMSPID)) {
+            // Originator IS a private member, process as usual (decode and cache)
+            log.info("Event from private member {}. Processing payload for cache.", originatorMSPID);
+            Resource resource = decode(prettyJson(payload)).orElse(null);
+            if (resource == null) {
+                log.error("Failed to decode resource from event {} by {}.", eventNameFull, originatorMSPID);
+                return;
             }
+
+            String eventType = eventNameFull.substring(0, lastUnderscore); // e.g., "CreateAsset"
+            if (eventType.startsWith("CreateAsset")) {
+                addCache(resource);
+            } else if (eventType.startsWith("UpdateAsset")) {
+                updateCache(resource);
+            } else if (eventType.startsWith("DeleteAsset")) {
+                deleteCache(resource);
+            } else {
+                log.warn("Unknown event type prefix in {} from {}", eventNameFull, originatorMSPID);
+            }
+        } else {
+            // Originator IS NOT a private member.
+            // This is where the "FHIR resource conversion" for non-private MSPs should happen.
+            // For now, as a placeholder, we will log the payload and state that conversion is needed.
+            // A more specific "conversion" task would require more details on the transformation logic.
+            log.info("Event from NON-PRIVATE member {}. Payload: {}. FHIR resource conversion would happen here.", 
+                     originatorMSPID, new String(payload, StandardCharsets.UTF_8));
+            // TODO: Implement actual FHIR resource conversion/transformation based on precise requirements.
+            // For example, if the payload is already a FHIR resource but needs sanitization:
+            // Resource potentiallyPublicResource = decode(prettyJson(payload)).orElse(null);
+            // if (potentiallyPublicResource != null) {
+            //     // Sanitize_or_transform(potentiallyPublicResource);
+            //     // Then decide if/how to cache or use it.
+            // }
         }
     }
 

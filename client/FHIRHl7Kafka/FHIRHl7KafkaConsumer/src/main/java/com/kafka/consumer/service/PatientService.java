@@ -1,5 +1,11 @@
 package com.kafka.consumer.service;
 
+import java.lang.IllegalStateException;
+import java.lang.UnsupportedOperationException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.hl7.fhir.r4.model.Bundle;
@@ -35,30 +41,44 @@ public class PatientService extends FabricServiceBase {
 
     public Bundle search() throws GatewayException, JsonProcessingException {
         log.info("\n--> Evaluate Transaction: GetAll, function returns all the current patients on the ledger");
-        var evaluateResult = contract.evaluateTransaction("GetAllAssets");
+        var evaluateResult = contract.evaluateTransaction("GetAllAssets", getPrivateCollectionName());
         return processor.decodeList(processor.prettyJson(evaluateResult));
     }
 
     public Patient searchById(String id) throws GatewayException, JsonProcessingException {
         log.info("\n--> Evaluate Transaction: readPatient, function returns patient attributes");
-        var evaluateResult = contract.evaluateTransaction("ReadAsset", id);
+        var evaluateResult = contract.evaluateTransaction("ReadAsset", getPrivateCollectionName(), id);
         return (Patient) processor.decode(processor.prettyJson(evaluateResult)).get();
     }
 
     public boolean patientExists(String id) throws GatewayException {
         log.info("\n--> Evaluate Transaction: ReadAsset, function returns asset attributes");
-        byte[] result = contract.evaluateTransaction("AssetExists", id);
+        byte[] result = contract.evaluateTransaction("AssetExists", getPrivateCollectionName(), id);
         return Boolean.parseBoolean(new String(result));
     }
 
     public Bundle updatePatientAsync(Patient patient) throws EndorseException, SubmitException, CommitStatusException {
         log.info("\n--> Async Submit Transaction: UpdateAsset");
+        String targetCollection = getPrivateCollectionName();
+        if (targetCollection == null || targetCollection.isEmpty()) {
+            log.error("Private collection name is not configured. Aborting operation.");
+            throw new IllegalStateException("Private collection name is not configured for the current profile.");
+        }
+        List<String> allowedMsps = getAuthorizedMspIds();
+        if (allowedMsps == null || !allowedMsps.contains(mspId)) {
+            log.warn("Organization {} is not in the authorized list {} for private collection {}. Operation aborted.", mspId, allowedMsps, targetCollection);
+            throw new UnsupportedOperationException("Organization " + mspId + " is not authorized for private collection " + targetCollection);
+        }
         if (patient == null) {
             throw new InvalidRequestException("Patient is invalid");
         }
 
+        Map<String, byte[]> transientMap = new HashMap<>();
+        transientMap.put("asset_properties", processor.encode(patient).getBytes(StandardCharsets.UTF_8));
+
         var commit = contract.newProposal("UpdateAsset")
-                .addArguments(patient.getId(), processor.encode(patient))
+                .addArguments(getPrivateCollectionName(), patient.getIdElement().getIdPart())
+                .setTransient(transientMap)
                 .build().endorse().submitAsync();
 
         log.info("*** Waiting for transaction commit");
@@ -112,19 +132,43 @@ public class PatientService extends FabricServiceBase {
 
     private Patient createPatient(Patient patient) throws EndorseException, SubmitException, CommitException, CommitStatusException, Exception {
         log.info("\n--> Submit Transaction: createPatient, creates new patient with arguments");
-        var submitResult = contract.submitTransaction("CreateAsset", processor.encode(patient));
+        String targetCollection = getPrivateCollectionName();
+        if (targetCollection == null || targetCollection.isEmpty()) {
+            log.error("Private collection name is not configured. Aborting operation.");
+            throw new IllegalStateException("Private collection name is not configured for the current profile.");
+        }
+        List<String> allowedMsps = getAuthorizedMspIds();
+        if (allowedMsps == null || !allowedMsps.contains(mspId)) {
+            log.warn("Organization {} is not in the authorized list {} for private collection {}. Operation aborted.", mspId, allowedMsps, targetCollection);
+            throw new UnsupportedOperationException("Organization " + mspId + " is not authorized for private collection " + targetCollection);
+        }
+        Map<String, byte[]> transientMap = new HashMap<>();
+        transientMap.put("asset_properties", processor.encode(patient).getBytes(StandardCharsets.UTF_8));
+        var submitResult = contract.newProposal("CreateAsset").addArguments(getPrivateCollectionName()).setTransient(transientMap).build().endorse().submit();
         return (Patient) processor.decode(processor.prettyJson(submitResult)).get();
     }
 
     private Patient updatePatient(Patient patient) throws EndorseException, SubmitException, CommitException, CommitStatusException, Exception {
         log.info("\n--> Submit Transaction: UpdatePatient");
-        var submitResult = contract.submitTransaction("UpdateAsset", processor.encode(patient));
+        String targetCollection = getPrivateCollectionName();
+        if (targetCollection == null || targetCollection.isEmpty()) {
+            log.error("Private collection name is not configured. Aborting operation.");
+            throw new IllegalStateException("Private collection name is not configured for the current profile.");
+        }
+        List<String> allowedMsps = getAuthorizedMspIds();
+        if (allowedMsps == null || !allowedMsps.contains(mspId)) {
+            log.warn("Organization {} is not in the authorized list {} for private collection {}. Operation aborted.", mspId, allowedMsps, targetCollection);
+            throw new UnsupportedOperationException("Organization " + mspId + " is not authorized for private collection " + targetCollection);
+        }
+        Map<String, byte[]> transientMap = new HashMap<>();
+        transientMap.put("asset_properties", processor.encode(patient).getBytes(StandardCharsets.UTF_8));
+        var submitResult = contract.newProposal("UpdateAsset").addArguments(getPrivateCollectionName()).setTransient(transientMap).build().endorse().submit();
         return (Patient) processor.decode(processor.prettyJson(submitResult)).get();
     }
 
     public Bundle deletePatient(String id) throws EndorseException, SubmitException, CommitException, CommitStatusException, JsonProcessingException {
         log.info("\n--> Submit Transaction: deletePatient " + id);
-        var submitResult = contract.submitTransaction("DeleteAsset", id);
+        var submitResult = contract.submitTransaction("DeleteAsset", getPrivateCollectionName(), id);
         Patient patient = (Patient) processor.decode(processor.prettyJson(submitResult)).get();
 
         Bundle bundle = new Bundle();
