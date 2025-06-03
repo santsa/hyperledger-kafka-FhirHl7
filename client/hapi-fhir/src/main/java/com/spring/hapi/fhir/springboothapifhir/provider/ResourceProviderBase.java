@@ -207,7 +207,7 @@ public abstract class ResourceProviderBase {
             // This is where the "FHIR resource conversion" for non-private MSPs should happen.
             // For now, as a placeholder, we will log the payload and state that conversion is needed.
             // A more specific "conversion" task would require more details on the transformation logic.
-            log.info("Event from NON-PRIVATE member {}. Payload: {}. FHIR resource conversion would happen here.", 
+            log.info("Event from NON-PRIVATE member {}. Payload: {}. FHIR resource conversion would happen here.",
                      originatorMSPID, new String(payload, StandardCharsets.UTF_8));
             // TODO: Implement actual FHIR resource conversion/transformation based on precise requirements.
             // For example, if the payload is already a FHIR resource but needs sanitization:

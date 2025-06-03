@@ -37,7 +37,7 @@ public final class AssetTransferTest extends UtilTest {
             ChaincodeStub stub = mock(ChaincodeStub.class);
             when(ctx.getStub()).thenReturn(stub);
             when(stub.getStringState(ID_1)).thenReturn(VALUE_1);
-            Asset asset = contract.ReadAsset(ctx, ID_1);
+            Asset asset = contract.ReadAsset(ctx, ID_1, "");
             Asset asset2 = new Asset(ID_1, toValueMap(VALUE_1));
             assertThat(asset).isNotEqualTo(asset2);
         }
@@ -50,7 +50,7 @@ public final class AssetTransferTest extends UtilTest {
             when(ctx.getStub()).thenReturn(stub);
             when(stub.getStringState(ID_1)).thenReturn("");
             Throwable thrown = catchThrowable(() -> {
-                contract.ReadAsset(ctx, ID_1);
+                contract.ReadAsset(ctx, ID_1, "");
             });
 
             assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause()
@@ -71,7 +71,7 @@ public final class AssetTransferTest extends UtilTest {
             when(stub.getStringState(ID_1))
                     .thenReturn(VALUE_1);
             Throwable thrown = catchThrowable(() -> {
-                contract.CreateAsset(ctx, VALUE_1);
+                contract.CreateAsset(ctx, VALUE_1, "");
             });
             assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause()
                     .hasMessage("Asset asset1 already exists");
@@ -90,7 +90,7 @@ public final class AssetTransferTest extends UtilTest {
             when(ctx.getStub()).thenReturn(stub);
             when(stub.getStringState(ID_1)).thenReturn("");
             Throwable thrown = catchThrowable(() -> {
-                contract.DeleteAsset(ctx, ID_1);
+                contract.DeleteAsset(ctx, ID_1, "");
             });
             assertThat(thrown).isInstanceOf(ChaincodeException.class).hasNoCause()
                     .hasMessage("Asset asset1 does not exist");

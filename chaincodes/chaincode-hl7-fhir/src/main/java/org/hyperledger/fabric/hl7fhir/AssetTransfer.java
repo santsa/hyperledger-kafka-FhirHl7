@@ -2,6 +2,7 @@ package org.hyperledger.fabric.hl7fhir;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.hyperledger.fabric.contract.Context;
@@ -43,7 +44,6 @@ public final class AssetTransfer implements ContractInterface {
     public static final String VALUE_2 = "{\r\n  \"id\": \"asset2\",\r\n  \"resourceType\": \"Patient\",\r\n  \"data\": {\r\n    \"name\": [\r\n      {\r\n        \"use\": \"official\",\r\n        \"family\": \"Smith\",\r\n        \"given\": [\"John\"]\r\n      }\r\n    ],\r\n    \"gender\": \"male\",\r\n    \"birthDate\": \"1985-05-23\"\r\n  }\r\n}";
     // CHECKSTYLE:ON
 
-
     /**
      * Creates some initial assets on the ledger.
      *
@@ -51,8 +51,8 @@ public final class AssetTransfer implements ContractInterface {
      */
     @Transaction(intent = Transaction.TYPE.SUBMIT)
     public void InitLedger(final Context ctx) {
-        CreateAsset(ctx, VALUE_1);
-        CreateAsset(ctx, VALUE_2);
+        CreateAsset(ctx, VALUE_1, "");
+        CreateAsset(ctx, VALUE_2, "");
     }
 
     /**
@@ -71,7 +71,7 @@ public final class AssetTransfer implements ContractInterface {
     public Asset CreateAsset(final Context ctx, final String value, final String privateCollection) {
         ChaincodeStub stub = ctx.getStub();
         Map<String, Object> valueMap = genson.deserialize(value, Map.class);
-        if (AssetExists(ctx, valueMap.get("id").toString()), privateCollection) {
+        if (AssetExists(ctx, valueMap.get("id").toString(), privateCollection)) {
             String errorMessage = String.format("Asset %s already exists", valueMap.get("id").toString());
             System.err.println(errorMessage);
             throw new ChaincodeException(errorMessage, AssetTransferErrors.ASSET_ALREADY_EXISTS.toString());
@@ -80,16 +80,16 @@ public final class AssetTransfer implements ContractInterface {
 
         StringBuilder msg = new StringBuilder().append("CreateAsset - ");
         if (privateCollection != null && !privateCollection.isEmpty()) {
-            stub.putPrivateData(privateCollection,asset.getId(), genson.serialize(asset));
+            stub.putPrivateData(privateCollection, asset.getId(), genson.serialize(asset));
             msg.append(privateCollection).append(" - ");
         } else {
             stub.putStringState(asset.getId(), genson.serialize(asset));
         }
         stub.setEvent(msg.append(ctx.getClientIdentity().getMSPID()).toString(), genson.serialize(asset).getBytes());
         return asset;
-    }    
+    }
 
-   /**
+    /**
      * Updates the properties of an asset on the ledger.
      *
      * @param ctx            the transaction context
@@ -110,19 +110,20 @@ public final class AssetTransfer implements ContractInterface {
             System.err.println(errorMessage);
             throw new ChaincodeException(errorMessage, AssetTransferErrors.ASSET_NOT_FOUND.toString());
         }
-        Asset currentAsset = getAsset(ctx, valueMap.get("id").toString());
+        Asset currentAsset = getAsset(ctx, valueMap.get("id").toString(), privateCollection);
         Asset asset = new Asset(valueMap.get("id").toString(), valueMap);
 
-        int versionId = Integer.parseInt(((Map<String, Object>) currentAsset.getValue().get("meta")).get("versionId").toString()) + 1;
+        int versionId = Integer
+                .parseInt(((Map<String, Object>) currentAsset.getValue().get("meta")).get("versionId").toString()) + 1;
         ((Map<String, Object>) asset.getValue().get("meta")).put("versionId", versionId + "");
         String assetJSON = genson.serialize(asset);
-        
+
         StringBuilder msg = new StringBuilder().append("UpdateAsset - ");
-        if (privateCollection != null && !privateCollection.isEmpty()) {
-            stub.putPrivateData(privateCollection, assetId, assetJSON);
+        if (privateCollection != null && !privateCollection.isEmpty()) { // Corrected variable name
+            stub.putPrivateData(privateCollection, asset.getId(), assetJSON);
             msg.append(privateCollection).append(" - ");
         } else {
-            stub.putStringState(assetId, assetJSON);
+            stub.putStringState(asset.getId(), assetJSON);
         }
         stub.setEvent(msg.append(ctx.getClientIdentity().getMSPID()).toString(), genson.serialize(asset).getBytes());
         return asset;
@@ -136,17 +137,20 @@ public final class AssetTransfer implements ContractInterface {
      * @return the asset found on the ledger if there was one
      */
     @Transaction(intent = Transaction.TYPE.EVALUATE)
-    public Asset ReadAsset(final Context ctx, final String assetID) {
-        return getAsset(ctx, assetID);
+    public Asset ReadAsset(final Context ctx, final String assetID, final String privateCollection) {
+        return getAsset(ctx, assetID, privateCollection);
     }
 
     private Asset getAsset(final Context ctx, final String assetID, final String privateCollection) {
         ChaincodeStub stub = ctx.getStub();
-        String assetJSON;
+        String assetJSON = null;
         if (privateCollection != null && !privateCollection.isEmpty()) {
-            assetJSON = stub.getPrivateData(privateCollection, assetId);
+            byte[] assetBytes = stub.getPrivateData(privateCollection, assetID);
+            if (assetBytes != null) {
+                assetJSON = new String(assetBytes, java.nio.charset.StandardCharsets.UTF_8);
+            }
         } else {
-            assetJSON = stub.getStringState(assetId);
+            assetJSON = stub.getStringState(assetID);
         }
 
         if (assetJSON == null || assetJSON.isEmpty()) {
@@ -159,13 +163,7 @@ public final class AssetTransfer implements ContractInterface {
 
     @Transaction(intent = Transaction.TYPE.EVALUATE)
     public String GetAssetHistory(final Context ctx, final String assetID, final String privateCollection) {
-        QueryResultsIterator<KeyModification> historyIterator;
-        if (privateCollection != null && !privateCollection.isEmpty()) {
-            historyIterator = stub.getPrivateDataHistory(privateCollection, assetID);
-        } else {
-            historyIterator = stub.getHistoryForKey(assetId);
-        }
-
+        QueryResultsIterator<KeyModification> historyIterator = ctx.getStub().getHistoryForKey(assetID);
         List<Asset> assetHistoryList = new ArrayList<>();
         for (KeyModification modification : historyIterator) {
             String assetJSON = modification.getStringValue();
@@ -201,14 +199,15 @@ public final class AssetTransfer implements ContractInterface {
         StringBuilder msg = new StringBuilder().append("DeleteAsset - ");
         String assetJSON = genson.serialize(currentAsset);
         if (privateCollection != null && !privateCollection.isEmpty()) {
-            stub.putPrivateData(privateCollection, assetId, assetJSON);
-            stub.deletePrivateData(privateCollection, assetId);
+            stub.putPrivateData(privateCollection, assetID, assetJSON);
+            stub.delPrivateData(privateCollection, assetID);
             msg.append(privateCollection).append(" - ");
         } else {
-            stub.putStringState(assetId, assetJSON);
-            stub.delState(assetId);
+            stub.putStringState(assetID, assetJSON);
+            stub.delState(assetID);
         }
-        stub.setEvent(msg.append(ctx.getClientIdentity().getMSPID()).toString(), genson.serialize(asset).getBytes());
+        stub.setEvent(msg.append(ctx.getClientIdentity().getMSPID()).toString(),
+                genson.serialize(currentAsset).getBytes());
         return currentAsset;
     }
 
@@ -222,12 +221,11 @@ public final class AssetTransfer implements ContractInterface {
     @Transaction(intent = Transaction.TYPE.EVALUATE)
     public boolean AssetExists(final Context ctx, final String assetID, final String privateCollection) {
         ChaincodeStub stub = ctx.getStub();
-        String assetJSON;
         if (privateCollection != null && !privateCollection.isEmpty()) {
-            assetJSON = stub.getPrivateData(privateCollection, assetId);
-        } else {
-            assetJSON = stub.getStringState(assetId);
+            byte[] assetBytes = stub.getPrivateData(privateCollection, assetID);
+            return (assetBytes != null && assetBytes.length > 0);
         }
+        String assetJSON = stub.getStringState(assetID);
         return (assetJSON != null && !assetJSON.isEmpty());
     }
 
@@ -238,22 +236,33 @@ public final class AssetTransfer implements ContractInterface {
      * @return array of assets found on the ledger
      */
     @Transaction(intent = Transaction.TYPE.EVALUATE)
-    public String GetAllAssets(final Context ctx) {
+    public String GetAllAssets(final Context ctx, final String privateCollection) {
         ChaincodeStub stub = ctx.getStub();
-        List<Asset> queryResults = new ArrayList<>();
-        // To retrieve all assets from the ledger use getStateByRange with empty
-        // startKey & endKey.
-        // Giving empty startKey & endKey is interpreted as all the keys from beginning
-        // to end.
-        // As another example, if you use startKey = 'asset0', endKey = 'asset9' ,
-        // then getStateByRange will retrieve asset with keys between asset0 (inclusive)
-        // and asset9 (exclusive) in lexical order.
-        QueryResultsIterator<KeyValue> results = stub.getStateByRange("", "");
+        Map<String, Asset> resultAssetsMap = GetAllAssetsUnified(stub, null);
+        Map<String, Asset> privateAssetsMap = GetAllAssetsUnified(stub, privateCollection);
+        privateAssetsMap.forEach((k, v) -> resultAssetsMap.put(k.toString(), v));
+        return genson.serialize(resultAssetsMap.values());
+    }
+
+    public String GetAllAssetsPublic(final Context ctx) {
+        return genson.serialize(GetAllAssetsUnified(ctx.getStub(), null).values());
+    }
+
+    public String GetAllAssetsPrivate(final Context ctx, final String privateCollection) {
+        return genson.serialize(GetAllAssetsUnified(ctx.getStub(), privateCollection).values());
+    }
+
+    private Map GetAllAssetsUnified(final ChaincodeStub stub, final String privateCollection) {
+        Map<String, Asset> finalAssetsMap = new HashMap<>();
+        QueryResultsIterator<KeyValue> results = (privateCollection != null && !privateCollection.isEmpty())
+                ? stub.getPrivateDataByRange(privateCollection, "", "")
+                : stub.getStateByRange("", "");
         for (KeyValue result : results) {
             Asset asset = genson.deserialize(result.getStringValue(), Asset.class);
             System.out.println(asset);
-            queryResults.add(asset);
+            finalAssetsMap.put(asset.getId(), asset);
         }
-        return genson.serialize(queryResults);
+        return finalAssetsMap;
     }
+
 }

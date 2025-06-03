@@ -9,7 +9,8 @@ group 'org.hyperledger.fabric.hl7fhir' // Updated group name
 version '1.0.0' // Updated version
 
 dependencies {
-    implementation 'org.hyperledger.fabric-chaincode-java:fabric-chaincode-shim:2.5.+'
+    //implementation 'org.hyperledger.fabric-chaincode-java:fabric-chaincode-shim:2.5.+'
+    implementation 'org.hyperledger.fabric-chaincode-java:fabric-chaincode-shim:2.5.5'
     implementation 'org.json:json:+'
     implementation 'com.owlike:genson:1.5'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
