@@ -71,11 +71,11 @@ public class PatientController {
         return patientService.createOrUpdate(patient);
     }
 
-    @PutMapping(path = "/updatePatientAsync", consumes = {MediaType.APPLICATION_JSON_VALUE, "application/fhir+json"}, produces = {"application/fhir+json"})
+    /*@PutMapping(path = "/updatePatientAsync", consumes = {MediaType.APPLICATION_JSON_VALUE, "application/fhir+json"}, produces = {"application/fhir+json"})
     @ResponseStatus(HttpStatus.ACCEPTED)
     public Bundle updatePatientAsync(@RequestBody Patient patient) throws EndorseException, SubmitException, CommitException, CommitStatusException, GatewayException{
         return patientService.updatePatientAsync(patient);
-    }
+    }*/
 
     @PutMapping(path = "/update",consumes = {MediaType.APPLICATION_JSON_VALUE, "application/fhir+json"}, produces = {"application/fhir+json"})
     @ResponseStatus(HttpStatus.CREATED)

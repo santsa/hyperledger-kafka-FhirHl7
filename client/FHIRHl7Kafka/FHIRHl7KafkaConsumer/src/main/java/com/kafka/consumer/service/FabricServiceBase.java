@@ -36,7 +36,7 @@ public abstract class FabricServiceBase {
 
     // Inject configuration values from application.properties
     @Value("${fabric.mspId}")
-    protected String mspId;
+    private String mspId;
 
     @Value("${fabric.channelName}")
     private String channelName;
@@ -95,7 +95,8 @@ public abstract class FabricServiceBase {
 
         // Process raw MSP IDs
         if (authorizedMspIdsRaw != null && !authorizedMspIdsRaw.isEmpty()) {
-            this.authorizedMspIds = Arrays.asList(authorizedMspIdsRaw.split("\\s*,\\s*")); // Split by comma, trimming whitespace
+            this.authorizedMspIds = Arrays.asList(authorizedMspIdsRaw.split("\\s*,\\s*")); // Split by comma, trimming
+                                                                                           // whitespace
         } else {
             this.authorizedMspIds = new ArrayList<>(); // Empty list if property is not set
         }
@@ -113,7 +114,8 @@ public abstract class FabricServiceBase {
     }
 
     private ManagedChannel newGrpcConnection() throws IOException {
-        //System.out.println("Current Working Directory: " + System.getProperty("user.dir"));
+        // System.out.println("Current Working Directory: " +
+        // System.getProperty("user.dir"));
         Path tlsCertPath = Paths.get(cryptoPath, "peers/" + peer + "/tls/ca.crt");
         var credentials = TlsChannelCredentials.newBuilder()
                 .trustManager(tlsCertPath.toFile())
@@ -145,11 +147,14 @@ public abstract class FabricServiceBase {
         }
     }
 
-    public List<String> getAuthorizedMspIds() {
-        return this.authorizedMspIds;
-    }
-
-    public String getPrivateCollectionName() {
-        return this.privateCollectionName;
+    public String getTargetCollection() {
+        if (authorizedMspIds == null || !authorizedMspIds.contains(mspId)) {
+            log.warn("Organization {} is not in the authorized list {} for private collection {}. Operation warm.",
+                    mspId, authorizedMspIds, privateCollectionName);
+            return null;
+        }
+        log.info("Organization {} is in the authorized list {} for private collection {}.",
+                    mspId, authorizedMspIds, privateCollectionName);
+        return privateCollectionName;
     }
 }

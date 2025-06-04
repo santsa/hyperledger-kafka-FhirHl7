@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
@@ -54,8 +56,8 @@ class PatientServiceTest {
         patient.setId("123");
         patient.setActive(true);
         expectedBundle.addEntry().setResource(patient);
-
-        when(contract.evaluateTransaction("GetAllAssets")).thenReturn(SAMPLE_BYTES);
+        
+        when(contract.evaluateTransaction(eq("GetAllAssets"), (String) isNull())).thenReturn(SAMPLE_BYTES);
         when(processor.prettyJson(SAMPLE_BYTES)).thenReturn(SAMPLE_JSON);
         when(processor.decodeList(SAMPLE_JSON)).thenReturn(expectedBundle);
 
@@ -78,7 +80,7 @@ class PatientServiceTest {
         expectedPatient.setId(patientId);
         expectedPatient.setActive(true);
 
-        when(contract.evaluateTransaction("ReadAsset", patientId)).thenReturn(SINGLE_PATIENT_BYTES);
+        when(contract.evaluateTransaction(eq("ReadAsset"), eq(patientId), isNull())).thenReturn(SINGLE_PATIENT_BYTES);
         when(processor.prettyJson(SINGLE_PATIENT_BYTES)).thenReturn(SINGLE_PATIENT_JSON);
         when(processor.decode(SINGLE_PATIENT_JSON)).thenReturn(Optional.of(expectedPatient));
 
@@ -92,7 +94,7 @@ class PatientServiceTest {
     @Test
     void patientExists_ShouldReturnTrue_WhenPatientExists() throws Exception {
         String patientId = "123";
-        when(contract.evaluateTransaction("AssetExists", patientId)).thenReturn("true".getBytes());
+        when(contract.evaluateTransaction(eq("AssetExists"), eq(patientId), isNull())).thenReturn("true".getBytes());
         boolean result = patientService.patientExists(patientId);
         assertTrue(result, "Patient should exist");
     }
@@ -100,7 +102,7 @@ class PatientServiceTest {
     @Test
     void patientExists_ShouldReturnFalse_WhenPatientDoesNotExist() throws Exception {
         String patientId = "456";
-        when(contract.evaluateTransaction("AssetExists", patientId)).thenReturn("false".getBytes());
+        when(contract.evaluateTransaction(eq("AssetExists"), eq(patientId), isNull())).thenReturn("false".getBytes());
         boolean result = patientService.patientExists(patientId);
         assertFalse(result, "Patient should not exist");
     }
@@ -112,15 +114,16 @@ class PatientServiceTest {
         String expectedEncodedPatient = "{\"resourceType\":\"Patient\",\"active\":true}";
 
         when(processor.encode(any(Patient.class))).thenReturn(expectedEncodedPatient);
-        when(contract.submitTransaction("CreateAsset", expectedEncodedPatient))
-            .thenReturn(SINGLE_PATIENT_BYTES);
+        when(contract.submitTransaction(eq("CreateAsset"), eq(expectedEncodedPatient), isNull()))
+                .thenReturn(SINGLE_PATIENT_BYTES);
         when(processor.prettyJson(SINGLE_PATIENT_BYTES)).thenReturn(SINGLE_PATIENT_JSON);
         when(processor.decode(SINGLE_PATIENT_JSON)).thenReturn(Optional.of(newPatient));
         Bundle result = patientService.createOrUpdate(newPatient);
 
         // Assert
         assertNotNull(result, "Bundle should not be null");
-        assertEquals(Bundle.BundleType.TRANSACTIONRESPONSE, result.getType(), "Bundle type should be TRANSACTIONRESPONSE");
+        assertEquals(Bundle.BundleType.TRANSACTIONRESPONSE, result.getType(),
+                "Bundle type should be TRANSACTIONRESPONSE");
         assertNotNull(result.getId(), "Bundle ID should not be null");
 
         Patient createdPatient = (Patient) result.getEntryFirstRep().getResource();
@@ -139,14 +142,15 @@ class PatientServiceTest {
         deletedPatient.setId(patientId);
         deletedPatient.setActive(false);
 
-        when(contract.submitTransaction("DeleteAsset", patientId)).thenReturn(SINGLE_PATIENT_BYTES);
+        when(contract.submitTransaction(eq("DeleteAsset"), eq(patientId), isNull())).thenReturn(SINGLE_PATIENT_BYTES);
         when(processor.prettyJson(SINGLE_PATIENT_BYTES)).thenReturn(SINGLE_PATIENT_JSON);
         when(processor.decode(SINGLE_PATIENT_JSON)).thenReturn(Optional.of(deletedPatient));
 
         Bundle result = patientService.deletePatient(patientId);
 
         assertNotNull(result, "Bundle should not be null");
-        assertEquals(Bundle.BundleType.TRANSACTIONRESPONSE, result.getType(), "Bundle type should be TRANSACTIONRESPONSE");
+        assertEquals(Bundle.BundleType.TRANSACTIONRESPONSE, result.getType(),
+                "Bundle type should be TRANSACTIONRESPONSE");
         assertNotNull(result.getId(), "Bundle ID should not be null");
 
         Patient resultPatient = (Patient) result.getEntryFirstRep().getResource();
